@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disneyland Slot Machine - Fully Loaded</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8; /* Light gray-blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        .slot-machine-container {
+            background-color: #ffffff; /* White card background */
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem; /* Increased gap */
+            max-width: 95%; /* Ensure responsiveness */
+        }
+
+        .reels-container {
+            display: flex;
+            gap: 1.2rem; /* Adjusted gap for 5 reels and larger size */
+            flex-wrap: wrap; /* Allow reels to wrap on smaller screens */
+            justify-content: center; /* Center reels when wrapped */
+        }
+
+        .reel {
+            background-color: #e2e8f0; /* Lighter reel background */
+            width: 8rem; /* **ENLARGED WIDTH** */
+            height: 24rem; /* **ENLARGED HEIGHT (3 symbols high)** */
+            display: flex;
+            flex-direction: column; /* Stack symbols vertically */
+            justify-content: space-around; /* Distribute symbols evenly */
+            align-items: center;
+            border-radius: 0.75rem; /* Rounded reel corners */
+            border: 2px solid #cbd5e0; /* Subtle border */
+            overflow: hidden; /* Ensure images fit within bounds during animation */
+            padding: 0.75rem 0; /* Added vertical padding inside the reel */
+        }
+
+        .reel-symbol {
+            width: 7rem; /* **ENLARGED WIDTH (slightly smaller than reel for padding)** */
+            height: 7rem; /* **ENLARGED HEIGHT** */
+            object-fit: contain; /* Ensure the entire image is visible */
+            border-radius: 0.5rem; /* Slightly rounded images */
+        }
+
+        /* CSS for the pulsing effect */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(0, 0, 0, 0.4);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 15px rgba(255, 255, 0, 0.8); /* Yellow glow */
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(0, 0, 0, 0.4);
+            }
+        }
+
+        .reel-symbol.pulsing {
+            animation: pulse 1s infinite alternate; /* Apply animation */
+        }
+
+
+        .spin-button {
+            background-image: linear-gradient(to right, #6366f1, #8b5cf6); /* Gradient button */
+            color: white;
+            padding: 1rem 2.5rem; /* Larger button padding */
+            font-size: 1.5rem; /* Larger button text */
+            font-weight: bold;
+            border: none;
+            border-radius: 0.75rem; /* Rounded button corners */
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4); /* Button shadow */
+        }
+
+        .spin-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .message-box {
+            margin-top: 1rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #10b981; /* Green color for win message */
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.5s ease-in-out;
+            text-align: center;
+        }
+
+        .message-box.show {
+            opacity: 1;
+        }
+
+        .balance-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4a5568; /* Darker gray for balance */
+        }
+
+        .bet-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap; /* Allow controls to wrap */
+            justify-content: center;
+        }
+
+        .bet-controls select {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .current-bet-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .fund-input-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .fund-input {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            width: 8rem;
+            text-align: center;
+        }
+
+        .add-funds-button {
+            background-color: #48bb78; /* Green for add funds */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .add-funds-button:hover {
+            background-color: #38a169;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .slot-machine-container {
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+            .reels-container {
+                gap: 1rem;
+            }
+            .reel {
+                width: 7rem; /* Adjusted for medium screens */
+                height: 21rem; /* 3 symbols * 7rem */
+                padding: 0.6rem 0;
+            }
+            .reel-symbol {
+                width: 6rem;
+                height: 6rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .slot-machine-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .reels-container {
+                gap: 0.8rem;
+            }
+            .reel {
+                width: 5.5rem;
+                height: 16.5rem; /* 3 symbols * 5.5rem */
+                padding: 0.5rem 0;
+            }
+            .reel-symbol {
+                width: 5rem;
+                height: 5rem;
+            }
+            .spin-button {
+                padding: 0.6rem 1.5rem;
+                font-size: 1.1rem;
+            }
+            .message-box {
+                font-size: 1.5rem;
+            }
+            .balance-display {
+                font-size: 1.2rem;
+            }
+            .fund-input {
+                width: 6rem;
+            }
+            .add-funds-button {
+                padding: 0.4rem 0.8rem;
+            }
+            .bet-controls {
+                flex-direction: column; /* Stack controls vertically */
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .reels-container {
+                flex-direction: row; /* Keep row for very small screens, let flex-wrap handle it */
+                gap: 0.5rem;
+            }
+            .reel {
+                width: 4rem;
+                height: 12rem; /* 3 symbols * 4rem */
+                padding: 0.3rem 0;
+            }
+            .reel-symbol {
+                width: 3.5rem;
+                height: 3.5rem;
+            }
+            .slot-machine-container {
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="slot-machine-container">
+    <h1 class="text-4xl font-extrabold text-gray-800 mb-4">Disneyland Slots!</h1>
+
+    <div class="balance-display">
+        Balance: $<span id="playerBalance">0.00</span>
+    </div>
+
+    <div class="fund-input-container">
+        <input type="number" id="fundsInput" class="fund-input" placeholder="Enter amount" min="1" value="100">
+        <button id="addFundsButton" class="add-funds-button">Add Funds</button>
+    </div>
+
+    <div class="bet-controls">
+        <label for="denominationSelect" class="font-bold text-gray-700">Denomination:</label>
+        <select id="denominationSelect">
+            <option value="0.25">$0.25 (Quarters)</option>
+            <option value="0.50">$0.50 (Half Dollars)</option>
+            <option value="1.00" selected>$1.00 (Dollars)</option>
+            <option value="2.00">$2.00 (Two Dollars)</option>
+        </select>
+
+        <label for="multiplierSelect" class="font-bold text-gray-700">Multiplier:</label>
+        <select id="multiplierSelect">
+            <option value="10" selected>10x</option>
+            <option value="20">20x</option>
+            <option value="30">30x</option>
+            <option value="40">40x</option>
+            <option value="50">50x</option>
+        </select>
+
+        <span class="current-bet-display">Current Bet: $<span id="currentBetSizeDisplay">0.00</span></span>
+    </div>
+
+    <div class="reels-container" id="reelsContainer">
+    </div>
+    <button id="spinButton" class="spin-button">Spin</button>
+    <p id="messageBox" class="message-box"></p>
+</div>
+
+<script>
+    // Define the 5 symbols (Disneyland rides) with their image URLs and values
+    // Using placeholder images for demonstration
+    const symbolsData = [
+        { name: 'California Screaming', symbol: 'california-screamin.webp', weight: 5, value: 0 },
+        { name: 'Grizzly River Run', symbol: 'grizzly.jpg', weight: 12, value: 5 },
+        { name: 'Indiana Jones', symbol: 'indiana.jpg', weight: 7, value: 2 },
+        { name: 'Radiator Springs Racers', symbol: 'radiator.webp', weight: 4, value: 1 },
+        { name: 'Space Ship Earth', symbol: 'spaceship-earth.webp', weight: 8, value: 15 },
+        { name: 'Submarine Voyage', symbol: 'submarine.webp', weight: 1, value: 0 },
+        { name: 'Teacups', symbol: 'teacups.webp', weight: 3, value: 0 },
+        { name: 'Tree of Life', symbol: 'treeoflife.jpg', weight: 9, value: 5 },
+        { name: 'Pirates of the Caribbean', symbol: 'pirates.webp', weight: 11, value: .5 },
+        { name: 'Tower of Terror', symbol: 'tot.avif', weight: 6, value: 1 },
+        { name: 'Splash Mountain', symbol: 'splash.webp', weight: 10, value: 10 },
+        { name: 'Haunted Mansion', symbol: 'haunted.jpg', weight: 5, value: 0 },
+        { name: 'Matterhorn', symbol: 'matterhorn.jpg', weight: 8, value: 20 },
+        { name: 'Thunder Mountain', symbol: 'thunder.jpg', weight: 5, value: 50 },
+        { name: 'Space Mountain', symbol: 'space.avif', weight: 2, value: 100 }
+    ];
+
+    // Number of reels and rows per reel
+    const numberOfReels = 5;
+    const rowsPerReel = 3;
+
+    // Get references to the DOM elements
+    const reelsContainer = document.getElementById('reelsContainer');
+    const spinButton = document.getElementById('spinButton');
+    const messageBox = document.getElementById('messageBox');
+    const playerBalanceSpan = document.getElementById('playerBalance');
+    const fundsInput = document.getElementById('fundsInput');
+    const addFundsButton = document.getElementById('addFundsButton');
+
+    // New bet control elements
+    const denominationSelect = document.getElementById('denominationSelect');
+    const multiplierSelect = document.getElementById('multiplierSelect');
+    const currentBetSizeDisplay = document.getElementById('currentBetSizeDisplay');
+
+    let totalSpins = 0; // Tracks the total number of spins
+    let reelsElements = []; // To store the actual DOM elements for each reel (container div)
+    let playerBalance = 0; // Initialize player's balance
+    let currentBetSize = 0; // Dynamic bet size
+
+    const guaranteedWinInterval = 50; // Every 50th spin is a guaranteed win
+
+    /**
+     * Calculates and updates the current bet size based on selected denomination and multiplier.
+     */
+    function updateBetSize() {
+        const denomination = parseFloat(denominationSelect.value);
+        const multiplier = parseInt(multiplierSelect.value);
+        currentBetSize = denomination * multiplier;
+        currentBetSizeDisplay.textContent = currentBetSize.toFixed(2); // Display with 2 decimal places
+        updateBalanceDisplay(); // Re-check spin button state based on new bet size
+    }
+
+    /**
+     * Updates the display of the player's balance and enables/disables the spin button.
+     */
+    function updateBalanceDisplay() {
+        playerBalanceSpan.textContent = playerBalance.toFixed(2); // Display balance with 2 decimal places
+    }
+
+    /**
+     * Initializes the reel elements in the DOM.
+     * Each reel div will now contain 'rowsPerReel' image elements.
+     */
+    function initializeReels() {
+        for (let i = 0; i < numberOfReels; i++) {
+            const reelDiv = document.createElement('div');
+            reelDiv.id = `reel${i + 1}`;
+            reelDiv.classList.add('reel');
+
+            for (let j = 0; j < rowsPerReel; j++) {
+                const imgElement = document.createElement('img');
+                imgElement.classList.add('reel-symbol');
+                imgElement.alt = `Reel ${i + 1} Symbol ${j + 1}`;
+                imgElement.dataset.row = j; // Store row index for easier access later
+                reelDiv.appendChild(imgElement);
+            }
+            reelsContainer.appendChild(reelDiv);
+            reelsElements.push(reelDiv);
+        }
+    }
+
+    /**
+     * Selects a random symbol data object from the predefined symbolsData array based on weights.
+     * @returns {object} A randomly selected symbol object (with symbol URL, name, and value).
+     */
+    function getRandomSymbolData() {
+        const totalWeight = symbolsData.reduce((sum, symbol) => sum + symbol.weight, 0);
+        const randomIndex = Math.floor(Math.random() * totalWeight);
+        let cumulativeWeight = 0;
+        for (const symbol of symbolsData) {
+            cumulativeWeight += symbol.weight;
+            if (randomIndex < cumulativeWeight) {
+                return symbol;
+            }
+        }
+        // Fallback in case of rounding errors, though unlikely with proper weights
+        return symbolsData[Math.floor(Math.random() * symbolsData.length)];
+    }
+
+    /**
+     * Displays or hides and updates the message box with the given text.
+     * @param {string} message - The text to display in the message box.
+     * @param {boolean} show - True to show, false to hide.
+     * @param {string} color - Optional: CSS color for the message.
+     */
+    function updateMessageBox(message, show, color = '#10b981') {
+        messageBox.textContent = message;
+        messageBox.style.color = color;
+        if (show) {
+            messageBox.classList.add('show');
+        } else {
+            messageBox.classList.remove('show');
+        }
+    }
+
+    /**
+     * Handles adding funds to the player's balance.
+     */
+    function addFunds() {
+        const amount = parseFloat(fundsInput.value); // Use parseFloat for decimal amounts
+        if (!isNaN(amount) && amount > 0) {
+            playerBalance += amount;
+            updateBalanceDisplay();
+            updateMessageBox(`Added $${amount.toFixed(2)} to your balance.`, true, '#3b82f6');
+            fundsInput.value = ''; // Clear input after adding
+        } else {
+            updateMessageBox('Please enter a valid amount to add funds.', true, '#ef4444');
+        }
+    }
+
+    /**
+     * Removes the pulsing class from all reel symbols.
+     */
+    function clearPulsingSymbols() {
+        reelsElements.forEach(reelElement => {
+            const symbolImages = reelElement.querySelectorAll('.reel-symbol');
+            symbolImages.forEach(imgElement => {
+                imgElement.classList.remove('pulsing');
+            });
+        });
+    }
+
+    /**
+     * Simulates a spin of the slot machine, updating each reel with random symbols.
+     * Includes a guaranteed win on every 50th spin and calculates ways-based winnings.
+     */
+    function spin() {
+        // Clear pulsing symbols from previous win immediately when spin starts
+        clearPulsingSymbols();
+
+        // Check if player has enough balance to spin
+        if (playerBalance < currentBetSize) {
+            updateMessageBox(`You need $${(currentBetSize - playerBalance).toFixed(2)} more to spin. Add funds!`, true, '#ef4444');
+            return; // Stop the spin function if not enough money
+        }
+
+        playerBalance -= currentBetSize; // Deduct spin cost (now dynamic)
+        updateBalanceDisplay();
+        totalSpins++; // Increment spin counter
+        updateMessageBox('', false); // Hide any previous message
+
+
+        // Disable the button during the spin animation
+        spinButton.disabled = true;
+        spinButton.textContent = 'Spinning...';
+
+        let spinCount = 0;
+        const maxFlickers = 30; // Number of "flickers" before stopping all at once
+        const flickerInterval = 40; // Milliseconds between each flicker for all reels
+        const reelStopDelay = 150; // Milliseconds delay between each reel stopping sequentially
+
+        // Determine if this is a guaranteed win spin
+        const isGuaranteedWin = (totalSpins % guaranteedWinInterval === 0);
+        let finalWinningSymbolData = null; // Will store the symbol object for guaranteed win
+
+        if (isGuaranteedWin) {
+            // If it's a guaranteed win, pick one random symbol to be the winning symbol
+            finalWinningSymbolData = getRandomSymbolData();
+            console.log(`Guaranteed win on spin ${totalSpins}! All reels will show: ${finalWinningSymbolData.name}`);
+        } else {
+            console.log(`Spin ${totalSpins}.`);
+        }
+
+        // Pre-calculate all final symbols for all reels (3 rows each)
+        // This array will hold the symbols that each reel will eventually stop on.
+        const finalReelSymbols = []; // Array of arrays: [ [reel1_row1, reel1_row2, reel1_row3], [reel2_row1, ...], ...]
+        for (let i = 0; i < numberOfReels; i++) {
+            const reelSymbols = [];
+            for (let j = 0; j < rowsPerReel; j++) {
+                if (isGuaranteedWin) {
+                    reelSymbols.push(finalWinningSymbolData);
+                } else {
+                    reelSymbols.push(getRandomSymbolData());
+                }
+            }
+            finalReelSymbols.push(reelSymbols);
+        }
+
+        const intervalId = setInterval(() => {
+            // During the initial flickering phase, all reels show random symbols simultaneously
+            reelsElements.forEach(reelElement => {
+                const symbolImages = reelElement.querySelectorAll('.reel-symbol');
+                symbolImages.forEach(imgElement => {
+                    const randomSymbolData = getRandomSymbolData();
+                    imgElement.src = randomSymbolData.symbol;
+                    imgElement.alt = randomSymbolData.name;
+                    imgElement.dataset.value = randomSymbolData.value;
+                });
+            });
+
+            spinCount++;
+            if (spinCount >= maxFlickers) {
+                clearInterval(intervalId); // Stop the simultaneous flickering
+
+                // Start the sequential stopping process
+                let currentReelIndex = 0;
+                const stopNextReel = () => {
+                    if (currentReelIndex < numberOfReels) {
+                        // Get the current reel element and its symbol image elements
+                        const reelElement = reelsElements[currentReelIndex];
+                        const symbolImages = reelElement.querySelectorAll('.reel-symbol');
+                        // Get the pre-calculated final symbols for this specific reel
+                        const symbolsForCurrentReel = finalReelSymbols[currentReelIndex];
+
+                        // Update all 3 image elements in the current reel to their final symbols
+                        symbolImages.forEach((imgElement, rowIndex) => {
+                            const symbolData = symbolsForCurrentReel[rowIndex];
+                            imgElement.src = symbolData.symbol;
+                            imgElement.alt = symbolData.name;
+                            imgElement.dataset.value = symbolData.value;
+                        });
+
+                        currentReelIndex++; // Move to the next reel
+                        // Schedule the stopping of the next reel after a delay
+                        setTimeout(stopNextReel, reelStopDelay);
+                    } else {
+                        // All reels have now stopped. Perform final checks and display results.
+                        spinButton.disabled = false;
+                        spinButton.textContent = 'Spin';
+
+                        // --- WAYS-BASED WIN CALCULATION ---
+                        let totalSessionWinnings = 0;
+                        const winningSymbolsToPulse = new Set(); // To track unique winning symbols to pulse
+
+                        // Iterate through each possible winning symbol
+                        symbolsData.forEach(winningSymbolData => {
+                            let countsPerReel = new Array(numberOfReels).fill(0); // Counts of this symbol on each reel
+                            const winningSymbolElementsForThisType = []; // Store references for *this specific* winning symbol type
+
+                            // Count occurrences of this specific winningSymbolData on each reel, across all 3 rows
+                            reelsElements.forEach((reelElement, reelIndex) => {
+                                const symbolImages = reelElement.querySelectorAll('.reel-symbol');
+                                symbolImages.forEach(imgElement => {
+                                    // Compare by alt text to determine if it's the target winning symbol
+                                    if (imgElement.alt === winningSymbolData.name) {
+                                        countsPerReel[reelIndex]++;
+                                        winningSymbolElementsForThisType.push({img: imgElement, reelIndex: reelIndex}); // Add to potential pulsing list
+                                    }
+                                });
+                            });
+
+                            // Check if the win condition "at least the first 3 reels" is met for this symbol
+                            if (countsPerReel[0] > 0 && countsPerReel[1] > 0 && countsPerReel[2] > 0) {
+                                let winningReels = [0, 1, 2];
+
+                                // Calculate the ways multiplier
+                                let waysMultiplier = countsPerReel[0] * countsPerReel[1] * countsPerReel[2];
+
+                                // Extend multiplier to 4th and 5th reel if the symbol is present
+                                if (countsPerReel[3] > 0) {
+                                    winningReels.push(3);
+                                    waysMultiplier *= countsPerReel[3];
+                                    if (countsPerReel[4] > 0) {
+                                        winningReels.push(4);
+                                        waysMultiplier *= countsPerReel[4];
+                                    }
+                                }
+
+                                // Scale the win value by the current bet size where value is multiplied by denomination first and then by multiplier
+                                let winValue = winningSymbolData.value * (parseFloat(denominationSelect.value)) * (parseInt(multiplierSelect.value));
+
+                                const currentSymbolWin = waysMultiplier * winValue;
+                                totalSessionWinnings += currentSymbolWin;
+                                console.log(`${winningSymbolData.name} - Counts per reel: [${countsPerReel.join(', ')}], Ways Multiplier: ${waysMultiplier}, Win: $${currentSymbolWin.toFixed(2)}`);
+
+                                // Add the winning symbols to the set to be pulsed if the reelIndex is in winningReels
+                                winningSymbolElementsForThisType.forEach(({img, reelIndex}) => {
+                                    if (winningReels.includes(reelIndex)) {
+                                        winningSymbolsToPulse.add(img);
+                                    }
+                                });
+                            }
+                        });
+
+                        if (totalSessionWinnings > 0) {
+                            playerBalance += totalSessionWinnings; // Add winnings to balance
+
+                            let message = `You won $${totalSessionWinnings.toFixed(2)}!`;
+                            if (totalSessionWinnings > currentBetSize * 10) {
+                                message = `BIG WIN! 🎉 You won $${totalSessionWinnings.toFixed(2)}!`;
+                            }
+
+                            updateMessageBox(message, true, '#10b981'); // Green for win
+                            console.log(`Total Session Winnings: $${totalSessionWinnings.toFixed(2)}. New Balance: $${playerBalance.toFixed(2)}`);
+
+                            // Apply pulsing class to winning symbols
+                            winningSymbolsToPulse.forEach(imgElement => {
+                                imgElement.classList.add('pulsing');
+                            });
+                            // PULSING WILL NOW LAST UNTIL NEXT SPIN
+
+                        }
+
+                        updateBalanceDisplay(); // Update balance display after potential win/loss
+
+                        // Check if balance is too low for the CURRENT bet size after the spin
+                        if (playerBalance < currentBetSize) {
+                            updateMessageBox(`Balance too low to spin ($${playerBalance.toFixed(2)}). Please add more funds or reduce your bet!`, true, '#f59e0b'); // Orange for low balance
+                        }
+                        // --- END WAYS-BASED WIN CALCULATION ---
+                    }
+                };
+
+                // Initiate the sequential reel stopping process
+                stopNextReel();
+            }
+        }, flickerInterval);
+    }
+
+    // Add event listeners
+    spinButton.addEventListener('click', spin);
+    addFundsButton.addEventListener('click', addFunds);
+    denominationSelect.addEventListener('change', updateBetSize);
+    multiplierSelect.addEventListener('change', updateBetSize);
+
+    // Initial state: Initialize reels and set random symbols on load
+    window.onload = function() {
+        initializeReels(); // Create the reel elements with 3 symbol slots each
+        reelsElements.forEach(reelElement => {
+            const symbolImages = reelElement.querySelectorAll('.reel-symbol');
+            symbolImages.forEach(imgElement => {
+                const randomSymbolData = getRandomSymbolData();
+                imgElement.src = randomSymbolData.symbol;
+                imgElement.alt = randomSymbolData.name;
+                imgElement.dataset.value = randomSymbolData.value;
+            });
+        });
+        updateBetSize(); // Calculate initial bet size
+        updateBalanceDisplay(); // Initialize balance display
+        updateMessageBox('Welcome to Disneyland Slots! Add funds and set your bet!', true, '#3b82f6'); // Blue welcome message
+    };
+
+</script>
+</body>
+</html>
