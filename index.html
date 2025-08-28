@@ -283,8 +283,17 @@
 
     <div class="reels-container" id="reelsContainer">
     </div>
-    <button id="spinButton" class="spin-button">Spin</button>
+
+    <div class="button-container" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center;">
+        <button id="mute-music" class="spin-button">Mute</button>
+        <button id="spinButton" class="spin-button">Spin</button>
+    </div>
+
+
     <p id="messageBox" class="message-box"></p>
+    <audio id="freeSpins" src="when_you_wish.mp3" loop></audio>
+    <audio id="backgroundMusic" src="background_music.mp3" loop autoplay></audio>
+
 </div>
 
 <script>
@@ -293,7 +302,7 @@
     const symbolsData = [
         { name: 'California Screaming', symbol: 'california-screamin.webp', weight: 5, value: 0 },
         { name: 'Grizzly River Run', symbol: 'grizzly.jpg', weight: 12, value: 5 },
-        { name: 'Indiana Jones', symbol: 'indiana.jpg', weight: 7, value: 2 },
+        { name: 'Indiana Jones', symbol: 'indiana.jpg', weight: 6, value: 2 },
         { name: 'Radiator Springs Racers', symbol: 'radiator.webp', weight: 4, value: 1 },
         { name: 'Space Ship Earth', symbol: 'spaceship-earth.webp', weight: 8, value: 15 },
         { name: 'Submarine Voyage', symbol: 'submarine.webp', weight: 1, value: 0 },
@@ -305,7 +314,8 @@
         { name: 'Haunted Mansion', symbol: 'haunted.jpg', weight: 5, value: 0 },
         { name: 'Matterhorn', symbol: 'matterhorn.jpg', weight: 8, value: 20 },
         { name: 'Thunder Mountain', symbol: 'thunder.jpg', weight: 5, value: 50 },
-        { name: 'Space Mountain', symbol: 'space.avif', weight: 2, value: 100 }
+        { name: 'Space Mountain', symbol: 'space.avif', weight: 2, value: 100 },
+        { name: 'Cinderella Castle', symbol: 'castle.jpg', weight: 1, value: 500 }
     ];
 
     // Number of reels and rows per reel
@@ -319,6 +329,7 @@
     const playerBalanceSpan = document.getElementById('playerBalance');
     const fundsInput = document.getElementById('fundsInput');
     const addFundsButton = document.getElementById('addFundsButton');
+    const muteToggleBtn = document.getElementById('mute-music');
 
     // New bet control elements
     const denominationSelect = document.getElementById('denominationSelect');
@@ -329,8 +340,40 @@
     let reelsElements = []; // To store the actual DOM elements for each reel (container div)
     let playerBalance = 0; // Initialize player's balance
     let currentBetSize = 0; // Dynamic bet size
+    let freeSpinsRemaining = 0; // NEW: Tracks free spins
 
-    const guaranteedWinInterval = 50; // Every 50th spin is a guaranteed win
+    const guaranteedWinInterval = 350; // Every 350th spin is a guaranteed win
+
+    const castleSymbolData = symbolsData.find(symbol => symbol.name === 'Cinderella Castle');
+
+    function playFreeSpinAudio() {
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        backgroundMusic.pause();
+
+        const audioElement = document.getElementById('freeSpins');
+        audioElement.currentTime = 0; // Reset to start
+        audioElement.play();
+    }
+
+    function stopFreeSpinAudio() {
+        const audioElement = document.getElementById('freeSpins');
+        audioElement.pause();
+        audioElement.currentTime = 0; // Reset to start
+
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        backgroundMusic.play();
+    }
+
+    function muteAllMusic() {
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        backgroundMusic.muted = !backgroundMusic.muted;
+
+        const freeSpinsMusic = document.getElementById('freeSpins');
+        freeSpinsMusic.muted = !freeSpinsMusic.muted;
+
+        const muteButton = document.getElementById('mute-music');
+        muteButton.textContent = backgroundMusic.muted ? 'Unmute' : 'Mute';
+    }
 
     /**
      * Calculates and updates the current bet size based on selected denomination and multiplier.
@@ -377,7 +420,8 @@
      * @returns {object} A randomly selected symbol object (with symbol URL, name, and value).
      */
     function getRandomSymbolData() {
-        const totalWeight = symbolsData.reduce((sum, symbol) => sum + symbol.weight, 0);
+        const symbolsForRandom = symbolsData.filter(symbol => symbol.name !== 'Cinderella Castle')
+        const totalWeight = symbolsForRandom.reduce((sum, symbol) => sum + symbol.weight, 0);
         const randomIndex = Math.floor(Math.random() * totalWeight);
         let cumulativeWeight = 0;
         for (const symbol of symbolsData) {
@@ -434,6 +478,60 @@
     }
 
     /**
+     * Creates the final Reel Symbols array for regular spins (non-guaranteed win).
+     */
+    function getFinalReelSymbols(isGuaranteedWin) {
+
+        if (isGuaranteedWin) {
+            // If it's a guaranteed win, fill all reels with the winning symbol
+            const winningSymbol = getRandomSymbolData();
+            return Array.from({ length: numberOfReels }, () => Array.from({ length: rowsPerReel }, () => winningSymbol));
+        }
+
+        // Pre-calculate all final symbols for all reels (3 rows each)
+        // This array will hold the symbols that each reel will eventually stop on.
+        const finalReelSymbols = [];
+        let castleFound = [false, false, false]; // To track if a castle is placed on reels 2, 3, 4
+
+        for (let i = 0; i < numberOfReels; i++) {
+            const reelSymbols = [];
+            // Handle castle placement logic for reels 2, 3, and 4 (indices 1, 2, 3)
+            if (i >= 1 && i <= 3) {
+                // 25% chance to place a castle on this reel if it hasn't been placed yet on a previous relevant reel
+                const placeCastle = Math.random() < 0.20;
+                if (placeCastle) {
+                    // Place the castle in a random row
+                    const castleRow = Math.floor(Math.random() * rowsPerReel);
+                    for (let j = 0; j < rowsPerReel; j++) {
+                        if (j === castleRow) {
+                            reelSymbols.push(castleSymbolData);
+                        } else {
+                            reelSymbols.push(getRandomSymbolData());
+                        }
+                    }
+                    castleFound[i - 1] = true;
+                } else {
+                    // Fill with random symbols if no castle is placed
+                    for (let j = 0; j < rowsPerReel; j++) {
+                        reelSymbols.push(getRandomSymbolData());
+                    }
+                }
+            } else {
+                // Regular reels (1 and 5) get random symbols
+                for (let j = 0; j < rowsPerReel; j++) {
+                    if (isGuaranteedWin) {
+                        reelSymbols.push(finalWinningSymbolData);
+                    } else {
+                        reelSymbols.push(getRandomSymbolData());
+                    }
+                }
+            }
+            finalReelSymbols.push(reelSymbols);
+        }
+        return finalReelSymbols;
+    }
+
+    /**
      * Simulates a spin of the slot machine, updating each reel with random symbols.
      * Includes a guaranteed win on every 50th spin and calculates ways-based winnings.
      */
@@ -441,16 +539,27 @@
         // Clear pulsing symbols from previous win immediately when spin starts
         clearPulsingSymbols();
 
-        // Check if player has enough balance to spin
-        if (playerBalance < currentBetSize) {
-            updateMessageBox(`You need $${(currentBetSize - playerBalance).toFixed(2)} more to spin. Add funds!`, true, '#ef4444');
-            return; // Stop the spin function if not enough money
+        // Check for free spins first
+        if (freeSpinsRemaining > 0) {
+            freeSpinsRemaining--; // Decrement the counter
+            updateMessageBox(`FREE SPIN! ${freeSpinsRemaining} remaining.`, true, '#48bb78');
+        } else {
+            // Check if player has enough balance to spin
+            stopFreeSpinAudio();
+            if (playerBalance < currentBetSize) {
+                updateMessageBox(`You need $${(currentBetSize - playerBalance).toFixed(2)} more to spin. Add funds!`, true, '#ef4444');
+                return; // Stop the spin function if not enough money
+            }
+            playerBalance -= currentBetSize; // Deduct spin cost
+            updateMessageBox('', false); // Hide any previous message
         }
 
-        playerBalance -= currentBetSize; // Deduct spin cost (now dynamic)
         updateBalanceDisplay();
         totalSpins++; // Increment spin counter
-        updateMessageBox('', false); // Hide any previous message
+
+        if (freeSpinsRemaining === 0) {
+            updateMessageBox('', false); // Hide any previous message
+        }
 
 
         // Disable the button during the spin animation
@@ -476,18 +585,7 @@
 
         // Pre-calculate all final symbols for all reels (3 rows each)
         // This array will hold the symbols that each reel will eventually stop on.
-        const finalReelSymbols = []; // Array of arrays: [ [reel1_row1, reel1_row2, reel1_row3], [reel2_row1, ...], ...]
-        for (let i = 0; i < numberOfReels; i++) {
-            const reelSymbols = [];
-            for (let j = 0; j < rowsPerReel; j++) {
-                if (isGuaranteedWin) {
-                    reelSymbols.push(finalWinningSymbolData);
-                } else {
-                    reelSymbols.push(getRandomSymbolData());
-                }
-            }
-            finalReelSymbols.push(reelSymbols);
-        }
+        const finalReelSymbols = getFinalReelSymbols(isGuaranteedWin);
 
         const intervalId = setInterval(() => {
             // During the initial flickering phase, all reels show random symbols simultaneously
@@ -530,6 +628,23 @@
                         // All reels have now stopped. Perform final checks and display results.
                         spinButton.disabled = false;
                         spinButton.textContent = 'Spin';
+
+                        // Check for the castle win condition first
+                        const castleWin = finalReelSymbols[1].some(s => s.name === castleSymbolData.name) &&
+                            finalReelSymbols[2].some(s => s.name === castleSymbolData.name) &&
+                            finalReelSymbols[3].some(s => s.name === castleSymbolData.name);
+
+                        if (castleWin) {
+                            playFreeSpinAudio();
+                            freeSpinsRemaining += 10;
+                            updateMessageBox(`🏰 Castle Bonus! You've won 10 FREE SPINS!`, true, '#9333ea');
+                            // Highlight the winning castle symbols
+                            finalReelSymbols[1].forEach(s => s.name === castleSymbolData.name ? reelsElements[1].querySelector('.reel-symbol[data-row="' + finalReelSymbols[1].indexOf(s) + '"]').classList.add('pulsing') : null);
+                            finalReelSymbols[2].forEach(s => s.name === castleSymbolData.name ? reelsElements[2].querySelector('.reel-symbol[data-row="' + finalReelSymbols[2].indexOf(s) + '"]').classList.add('pulsing') : null);
+                            finalReelSymbols[3].forEach(s => s.name === castleSymbolData.name ? reelsElements[3].querySelector('.reel-symbol[data-row="' + finalReelSymbols[3].indexOf(s) + '"]').classList.add('pulsing') : null);
+                            updateBalanceDisplay(); // Update button state
+                            return; // Stop here, no other win checks needed
+                        }
 
                         // --- WAYS-BASED WIN CALCULATION ---
                         let totalSessionWinnings = 0;
@@ -589,7 +704,7 @@
                             playerBalance += totalSessionWinnings; // Add winnings to balance
 
                             let message = `You won $${totalSessionWinnings.toFixed(2)}!`;
-                            if (totalSessionWinnings > currentBetSize * 10) {
+                            if (totalSessionWinnings > currentBetSize * 100) {
                                 message = `BIG WIN! 🎉 You won $${totalSessionWinnings.toFixed(2)}!`;
                             }
 
@@ -625,6 +740,7 @@
     addFundsButton.addEventListener('click', addFunds);
     denominationSelect.addEventListener('change', updateBetSize);
     multiplierSelect.addEventListener('change', updateBetSize);
+    muteToggleBtn.addEventListener('click', muteAllMusic);
 
     // Initial state: Initialize reels and set random symbols on load
     window.onload = function() {
