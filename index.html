@@ -14,7 +14,10 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden; /* Prevent body scroll */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto; /* Allow vertical scroll on mobile */
+            padding: 0.5rem;
+            box-sizing: border-box;
         }
 
         .slot-machine-container {
@@ -27,6 +30,8 @@
             align-items: center;
             gap: 2rem; /* Increased gap */
             max-width: 95%; /* Ensure responsiveness */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .reels-container {
@@ -173,6 +178,7 @@
             .slot-machine-container {
                 padding: 1.5rem;
                 gap: 1.5rem;
+                max-width: 98%;
             }
             .reels-container {
                 gap: 1rem;
@@ -186,63 +192,216 @@
                 width: 6rem;
                 height: 6rem;
             }
+            h1 {
+                font-size: 2.5rem !important;
+            }
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
             .slot-machine-container {
                 padding: 1rem;
                 gap: 1rem;
+                max-width: 100%;
+                border-radius: 1rem;
             }
             .reels-container {
-                gap: 0.8rem;
+                gap: 0.6rem;
+                justify-content: center;
             }
             .reel {
-                width: 5.5rem;
-                height: 16.5rem; /* 3 symbols * 5.5rem */
-                padding: 0.5rem 0;
+                width: 4.5rem;
+                height: 13.5rem; /* 3 symbols * 4.5rem */
+                padding: 0.4rem 0;
             }
             .reel-symbol {
-                width: 5rem;
-                height: 5rem;
+                width: 4rem;
+                height: 4rem;
             }
             .spin-button {
-                padding: 0.6rem 1.5rem;
-                font-size: 1.1rem;
+                padding: 0.8rem 1.8rem;
+                font-size: 1.2rem;
+                border-radius: 0.5rem;
             }
             .message-box {
-                font-size: 1.5rem;
+                font-size: 1.3rem;
+                margin-top: 0.5rem;
             }
             .balance-display {
-                font-size: 1.2rem;
+                font-size: 1.3rem;
             }
             .fund-input {
-                width: 6rem;
+                width: 7rem;
+                font-size: 0.9rem;
             }
             .add-funds-button {
-                padding: 0.4rem 0.8rem;
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
             }
             .bet-controls {
                 flex-direction: column; /* Stack controls vertically */
-                gap: 0.5rem;
+                gap: 0.8rem;
+                align-items: center;
+            }
+            .bet-controls select {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+                min-width: 8rem;
+            }
+            .current-bet-display {
+                font-size: 1.1rem;
+            }
+            h1 {
+                font-size: 2rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            .fund-input-container {
+                gap: 0.8rem;
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 0.25rem;
+            }
+            .slot-machine-container {
+                padding: 0.8rem;
+                gap: 0.8rem;
+                border-radius: 0.8rem;
+            }
             .reels-container {
-                flex-direction: row; /* Keep row for very small screens, let flex-wrap handle it */
+                gap: 0.4rem;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding: 0.5rem 0;
+                -webkit-overflow-scrolling: touch;
+            }
+            .reel {
+                width: 3.5rem;
+                height: 10.5rem; /* 3 symbols * 3.5rem */
+                padding: 0.3rem 0;
+                flex-shrink: 0;
+            }
+            .reel-symbol {
+                width: 3rem;
+                height: 3rem;
+            }
+            .spin-button {
+                padding: 0.7rem 1.5rem;
+                font-size: 1.1rem;
+                width: 100%;
+                max-width: 200px;
+            }
+            .message-box {
+                font-size: 1.1rem;
+                padding: 0 0.5rem;
+            }
+            .balance-display {
+                font-size: 1.1rem;
+            }
+            .fund-input {
+                width: 6rem;
+                font-size: 0.85rem;
+            }
+            .add-funds-button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            .bet-controls {
+                gap: 0.6rem;
+            }
+            .bet-controls select {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.85rem;
+                min-width: 7rem;
+            }
+            .current-bet-display {
+                font-size: 1rem;
+            }
+            h1 {
+                font-size: 1.8rem !important;
+                margin-bottom: 0.3rem !important;
+            }
+            .fund-input-container {
+                gap: 0.6rem;
+            }
+            .button-container {
+                gap: 0.8rem !important;
+                flex-direction: column;
+                width: 100%;
+            }
+            .button-container .spin-button {
+                order: 2;
+            }
+            .button-container #mute-music {
+                order: 1;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .slot-machine-container {
+                padding: 0.6rem;
+                gap: 0.6rem;
+            }
+            .reel {
+                width: 3rem;
+                height: 9rem; /* 3 symbols * 3rem */
+            }
+            .reel-symbol {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+            .spin-button {
+                padding: 0.6rem 1.2rem;
+                font-size: 1rem;
+            }
+            h1 {
+                font-size: 1.6rem !important;
+            }
+            .message-box {
+                font-size: 1rem;
+            }
+            .balance-display {
+                font-size: 1rem;
+            }
+        }
+
+        /* Landscape orientation adjustments for mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 0.25rem;
+            }
+            .slot-machine-container {
+                padding: 0.8rem;
+                gap: 0.8rem;
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+            .reels-container {
                 gap: 0.5rem;
             }
             .reel {
                 width: 4rem;
-                height: 12rem; /* 3 symbols * 4rem */
-                padding: 0.3rem 0;
+                height: 12rem;
             }
             .reel-symbol {
                 width: 3.5rem;
                 height: 3.5rem;
             }
-            .slot-machine-container {
-                padding: 0.8rem;
+            h1 {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.3rem !important;
+            }
+            .message-box {
+                font-size: 1rem;
             }
         }
     </style>
